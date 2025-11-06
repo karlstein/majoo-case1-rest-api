@@ -24,6 +24,7 @@ help:
 	@echo "  run-http                  Run the HTTP server"
 	@echo "  test                      Run all tests with verbose output"
 	@echo "  test-coverage             Run tests and generate coverage report"
+	@echo "  swagger-ui                Launch Swagger UI to view docs/openapi.yaml"
 	@echo "  docker-build [VERSION]    Build Docker image"
 	@echo "  docker-save [VERSION]     Save Docker image to tar"
 
@@ -70,6 +71,10 @@ test-coverage:
 	go test ./... -coverprofile=coverage.out
 	go tool cover -html=coverage.out -o coverage.html
 	@echo "Coverage report generated: coverage.html"
+
+.PHONY: swagger-ui
+swagger-ui:
+	@docker run -d --rm -p 8081:8080 -e SWAGGER_JSON=/docs/openapi.yaml -v $(PWD)/docs:/docs --name swagger-ui swaggerapi/swagger-ui
 
 
 
