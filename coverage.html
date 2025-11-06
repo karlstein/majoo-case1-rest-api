@@ -1,0 +1,1212 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>http: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">majoo-case1-rest-api/api/http/auth.go (0.0%)</option>
+				
+				<option value="file1">majoo-case1-rest-api/api/http/comment.go (0.0%)</option>
+				
+				<option value="file2">majoo-case1-rest-api/api/http/post.go (0.0%)</option>
+				
+				<option value="file3">majoo-case1-rest-api/cmd/http/main.go (0.0%)</option>
+				
+				<option value="file4">majoo-case1-rest-api/config/config.go (0.0%)</option>
+				
+				<option value="file5">majoo-case1-rest-api/internal/comment/repository.go (71.4%)</option>
+				
+				<option value="file6">majoo-case1-rest-api/internal/comment/usecase.go (38.3%)</option>
+				
+				<option value="file7">majoo-case1-rest-api/internal/database/database.go (0.0%)</option>
+				
+				<option value="file8">majoo-case1-rest-api/internal/http/handlers/auth.go (0.0%)</option>
+				
+				<option value="file9">majoo-case1-rest-api/internal/http/middleware/auth.go (0.0%)</option>
+				
+				<option value="file10">majoo-case1-rest-api/internal/http/response.go (0.0%)</option>
+				
+				<option value="file11">majoo-case1-rest-api/internal/post/repository.go (66.7%)</option>
+				
+				<option value="file12">majoo-case1-rest-api/internal/post/usecase.go (30.0%)</option>
+				
+				<option value="file13">majoo-case1-rest-api/internal/security/jwt.go (0.0%)</option>
+				
+				<option value="file14">majoo-case1-rest-api/internal/security/password.go (0.0%)</option>
+				
+				<option value="file15">majoo-case1-rest-api/internal/testutil/sqlmock.go (0.0%)</option>
+				
+				<option value="file16">majoo-case1-rest-api/internal/user/repository.go (100.0%)</option>
+				
+				<option value="file17">majoo-case1-rest-api/internal/user/usecase.go (69.2%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package apihttp
+
+import (
+        "majoo-case1-rest-api/config"
+        httpx "majoo-case1-rest-api/internal/http"
+        "majoo-case1-rest-api/internal/user"
+        "net/http"
+
+        "github.com/gin-gonic/gin"
+)
+
+type authHandler struct {
+        usecase *user.Usecase
+        cfg     config.Config
+}
+
+func RegisterAuthRoutes(rg *gin.RouterGroup, u *user.Usecase, cfg config.Config) <span class="cov0" title="0">{
+        h := &amp;authHandler{usecase: u, cfg: cfg}
+        rg.POST("/register", h.register)
+        rg.POST("/login", h.login)
+}</span>
+
+func (h *authHandler) register(c *gin.Context) <span class="cov0" title="0">{
+        var req user.RegisterRequest
+        if err := c.ShouldBindJSON(&amp;req); err != nil </span><span class="cov0" title="0">{
+                httpx.RespondWithError(c, http.StatusBadRequest, err.Error())
+                return
+        }</span>
+        <span class="cov0" title="0">u, token, err := h.usecase.Register(req.Username, req.Email, req.Password)
+        if err != nil </span><span class="cov0" title="0">{
+                switch err </span>{
+                case user.ErrConflict:<span class="cov0" title="0">
+                        httpx.RespondWithError(c, http.StatusConflict, "User exists")</span>
+                default:<span class="cov0" title="0">
+                        httpx.RespondWithError(c, http.StatusInternalServerError, "Failed to register")</span>
+                }
+                <span class="cov0" title="0">return</span>
+        }
+        <span class="cov0" title="0">c.SetSameSite(http.SameSiteLaxMode)
+        isSecure := c.Request.TLS != nil
+        c.SetCookie("token", token, 24*60*60, "/", "", isSecure, true)
+        httpx.RespondWithSuccess(c, http.StatusCreated, user.LoginResponse{Token: token, User: u})</span>
+}
+
+func (h *authHandler) login(c *gin.Context) <span class="cov0" title="0">{
+        var req user.LoginRequest
+        if err := c.ShouldBindJSON(&amp;req); err != nil </span><span class="cov0" title="0">{
+                httpx.RespondWithError(c, http.StatusBadRequest, err.Error())
+                return
+        }</span>
+        <span class="cov0" title="0">u, token, err := h.usecase.Login(req.Email, req.Password)
+        if err != nil </span><span class="cov0" title="0">{
+                switch err </span>{
+                case user.ErrUnauthorized:<span class="cov0" title="0">
+                        httpx.RespondWithError(c, http.StatusUnauthorized, "Invalid credentials")</span>
+                default:<span class="cov0" title="0">
+                        httpx.RespondWithError(c, http.StatusInternalServerError, "Login failed")</span>
+                }
+                <span class="cov0" title="0">return</span>
+        }
+        <span class="cov0" title="0">c.SetSameSite(http.SameSiteLaxMode)
+        isSecure := c.Request.TLS != nil
+        c.SetCookie("token", token, 24*60*60, "/", "", isSecure, true)
+        httpx.RespondWithSuccess(c, http.StatusOK, user.LoginResponse{Token: token, User: u})</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package apihttp
+
+import (
+        "majoo-case1-rest-api/internal/comment"
+        httpx "majoo-case1-rest-api/internal/http"
+        "net/http"
+        "strconv"
+
+        "github.com/gin-gonic/gin"
+)
+
+type commentHandler struct{ uc *comment.Usecase }
+
+func RegisterCommentRoutes(rg *gin.RouterGroup, uc *comment.Usecase) <span class="cov0" title="0">{
+        h := &amp;commentHandler{uc: uc}
+        rg.GET("/posts/:id/comments", h.listByPost)
+        rg.GET("/comments/:id", h.get)
+        rg.POST("/posts/:id/comments", h.create)
+        rg.PUT("/comments/:id", h.update)
+        rg.DELETE("/comments/:id", h.delete)
+}</span>
+
+func (h *commentHandler) listByPost(c *gin.Context) <span class="cov0" title="0">{
+        postID, err := strconv.Atoi(c.Param("id"))
+        if err != nil </span><span class="cov0" title="0">{
+                httpx.RespondWithError(c, http.StatusBadRequest, "Invalid post ID")
+                return
+        }</span>
+        <span class="cov0" title="0">items, err := h.uc.ListByPost(postID)
+        if err != nil </span><span class="cov0" title="0">{
+                httpx.RespondWithError(c, http.StatusInternalServerError, "Failed to fetch comments")
+                return
+        }</span>
+        <span class="cov0" title="0">httpx.RespondWithSuccess(c, http.StatusOK, gin.H{"post_id": postID, "comments": items})</span>
+}
+
+func (h *commentHandler) get(c *gin.Context) <span class="cov0" title="0">{
+        id, err := strconv.Atoi(c.Param("id"))
+        if err != nil </span><span class="cov0" title="0">{
+                httpx.RespondWithError(c, http.StatusBadRequest, "Invalid comment ID")
+                return
+        }</span>
+        <span class="cov0" title="0">cm, err := h.uc.Get(id)
+        if err != nil </span><span class="cov0" title="0">{
+                httpx.RespondWithError(c, http.StatusNotFound, "Comment not found")
+                return
+        }</span>
+        <span class="cov0" title="0">httpx.RespondWithSuccess(c, http.StatusOK, cm)</span>
+}
+
+func (h *commentHandler) create(c *gin.Context) <span class="cov0" title="0">{
+        postID, err := strconv.Atoi(c.Param("id"))
+        if err != nil </span><span class="cov0" title="0">{
+                httpx.RespondWithError(c, http.StatusBadRequest, "Invalid post ID")
+                return
+        }</span>
+        <span class="cov0" title="0">var req comment.CreateCommentRequest
+        if err := c.ShouldBindJSON(&amp;req); err != nil </span><span class="cov0" title="0">{
+                httpx.RespondWithError(c, http.StatusBadRequest, err.Error())
+                return
+        }</span>
+        <span class="cov0" title="0">userID := c.MustGet("userID").(int)
+        cm, err := h.uc.Create(postID, userID, req.Content)
+        if err != nil </span><span class="cov0" title="0">{
+                switch err </span>{
+                case comment.ErrNotFound:<span class="cov0" title="0">
+                        httpx.RespondWithError(c, http.StatusNotFound, "Post not found")</span>
+                default:<span class="cov0" title="0">
+                        httpx.RespondWithError(c, http.StatusInternalServerError, "Failed to create comment")</span>
+                }
+                <span class="cov0" title="0">return</span>
+        }
+        <span class="cov0" title="0">httpx.RespondWithSuccess(c, http.StatusCreated, cm)</span>
+}
+
+func (h *commentHandler) update(c *gin.Context) <span class="cov0" title="0">{
+        id, err := strconv.Atoi(c.Param("id"))
+        if err != nil </span><span class="cov0" title="0">{
+                httpx.RespondWithError(c, http.StatusBadRequest, "Invalid comment ID")
+                return
+        }</span>
+        <span class="cov0" title="0">var req comment.UpdateCommentRequest
+        if err := c.ShouldBindJSON(&amp;req); err != nil </span><span class="cov0" title="0">{
+                httpx.RespondWithError(c, http.StatusBadRequest, err.Error())
+                return
+        }</span>
+        <span class="cov0" title="0">userID := c.MustGet("userID").(int)
+        cm, err := h.uc.Update(userID, id, req.Content)
+        if err != nil </span><span class="cov0" title="0">{
+                if err == comment.ErrForbidden </span><span class="cov0" title="0">{
+                        httpx.RespondWithError(c, http.StatusForbidden, "Forbidden")
+                        return
+                }</span>
+                <span class="cov0" title="0">httpx.RespondWithError(c, http.StatusInternalServerError, "Failed to update comment")
+                return</span>
+        }
+        <span class="cov0" title="0">httpx.RespondWithSuccess(c, http.StatusOK, cm)</span>
+}
+
+func (h *commentHandler) delete(c *gin.Context) <span class="cov0" title="0">{
+        id, err := strconv.Atoi(c.Param("id"))
+        if err != nil </span><span class="cov0" title="0">{
+                httpx.RespondWithError(c, http.StatusBadRequest, "Invalid comment ID")
+                return
+        }</span>
+        <span class="cov0" title="0">userID := c.MustGet("userID").(int)
+        if err := h.uc.Delete(userID, id); err != nil </span><span class="cov0" title="0">{
+                if err == comment.ErrForbidden </span><span class="cov0" title="0">{
+                        httpx.RespondWithError(c, http.StatusForbidden, "Forbidden")
+                        return
+                }</span>
+                <span class="cov0" title="0">httpx.RespondWithError(c, http.StatusInternalServerError, "Failed to delete comment")
+                return</span>
+        }
+        <span class="cov0" title="0">httpx.RespondWithMessage(c, http.StatusOK, "Comment deleted successfully")</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package apihttp
+
+import (
+    httpx "majoo-case1-rest-api/internal/http"
+    "majoo-case1-rest-api/internal/post"
+    "net/http"
+    "strconv"
+
+    "github.com/gin-gonic/gin"
+)
+
+type postHandler struct{ uc *post.Usecase }
+
+func RegisterPostRoutes(rg *gin.RouterGroup, uc *post.Usecase) <span class="cov0" title="0">{
+    h := &amp;postHandler{uc: uc}
+    rg.GET("/posts", h.list)
+    rg.GET("/posts/:id", h.get)
+    rg.POST("/posts", h.create)
+    rg.PUT("/posts/:id", h.update)
+    rg.DELETE("/posts/:id", h.delete)
+}</span>
+
+func (h *postHandler) list(c *gin.Context) <span class="cov0" title="0">{
+    page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+    limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+    posts, err := h.uc.List(page, limit)
+    if err != nil </span><span class="cov0" title="0">{ httpx.RespondWithError(c, http.StatusInternalServerError, "Failed to fetch posts"); return }</span>
+    <span class="cov0" title="0">httpx.RespondWithSuccess(c, http.StatusOK, gin.H{"posts": posts, "page": page, "limit": limit})</span>
+}
+
+func (h *postHandler) get(c *gin.Context) <span class="cov0" title="0">{
+    id, err := strconv.Atoi(c.Param("id"))
+    if err != nil </span><span class="cov0" title="0">{ httpx.RespondWithError(c, http.StatusBadRequest, "Invalid post ID"); return }</span>
+    <span class="cov0" title="0">p, err := h.uc.Get(id)
+    if err != nil </span><span class="cov0" title="0">{ httpx.RespondWithError(c, http.StatusNotFound, "Post not found"); return }</span>
+    <span class="cov0" title="0">httpx.RespondWithSuccess(c, http.StatusOK, p)</span>
+}
+
+func (h *postHandler) create(c *gin.Context) <span class="cov0" title="0">{
+    var req post.CreatePostRequest
+    if err := c.ShouldBindJSON(&amp;req); err != nil </span><span class="cov0" title="0">{ httpx.RespondWithError(c, http.StatusBadRequest, err.Error()); return }</span>
+    <span class="cov0" title="0">userID := c.MustGet("userID").(int)
+    p, err := h.uc.Create(userID, req)
+    if err != nil </span><span class="cov0" title="0">{ httpx.RespondWithError(c, http.StatusInternalServerError, "Failed to create post"); return }</span>
+    <span class="cov0" title="0">httpx.RespondWithSuccess(c, http.StatusCreated, p)</span>
+}
+
+func (h *postHandler) update(c *gin.Context) <span class="cov0" title="0">{
+    id, err := strconv.Atoi(c.Param("id"))
+    if err != nil </span><span class="cov0" title="0">{ httpx.RespondWithError(c, http.StatusBadRequest, "Invalid post ID"); return }</span>
+    <span class="cov0" title="0">var req post.UpdatePostRequest
+    if err := c.ShouldBindJSON(&amp;req); err != nil </span><span class="cov0" title="0">{ httpx.RespondWithError(c, http.StatusBadRequest, err.Error()); return }</span>
+    <span class="cov0" title="0">userID := c.MustGet("userID").(int)
+    p, err := h.uc.Update(userID, id, req)
+    if err != nil </span><span class="cov0" title="0">{
+        if err == post.ErrForbidden </span><span class="cov0" title="0">{ httpx.RespondWithError(c, http.StatusForbidden, "Forbidden"); return }</span>
+        <span class="cov0" title="0">httpx.RespondWithError(c, http.StatusInternalServerError, "Failed to update post"); return</span>
+    }
+    <span class="cov0" title="0">httpx.RespondWithSuccess(c, http.StatusOK, p)</span>
+}
+
+func (h *postHandler) delete(c *gin.Context) <span class="cov0" title="0">{
+    id, err := strconv.Atoi(c.Param("id"))
+    if err != nil </span><span class="cov0" title="0">{ httpx.RespondWithError(c, http.StatusBadRequest, "Invalid post ID"); return }</span>
+    <span class="cov0" title="0">userID := c.MustGet("userID").(int)
+    if err := h.uc.Delete(userID, id); err != nil </span><span class="cov0" title="0">{
+        if err == post.ErrForbidden </span><span class="cov0" title="0">{ httpx.RespondWithError(c, http.StatusForbidden, "Forbidden"); return }</span>
+        <span class="cov0" title="0">httpx.RespondWithError(c, http.StatusInternalServerError, "Failed to delete post"); return</span>
+    }
+    <span class="cov0" title="0">httpx.RespondWithMessage(c, http.StatusOK, "Post deleted successfully")</span>
+}
+
+
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package main
+
+import (
+        "flag"
+        "log"
+        apihttp "majoo-case1-rest-api/api/http"
+        "majoo-case1-rest-api/config"
+        "majoo-case1-rest-api/internal/comment"
+        "majoo-case1-rest-api/internal/database"
+        "majoo-case1-rest-api/internal/http/middleware"
+        "majoo-case1-rest-api/internal/post"
+        "majoo-case1-rest-api/internal/user"
+
+        "github.com/gin-gonic/gin"
+        "github.com/joho/godotenv"
+)
+
+func main() <span class="cov0" title="0">{
+        envPath := flag.String("env-path", "", "Path to .env file (default: config/.env or .env)")
+        flag.Parse()
+
+        // Load env file if path is provided
+        if *envPath != "" </span><span class="cov0" title="0">{
+                if err := godotenv.Load(*envPath); err != nil </span><span class="cov0" title="0">{
+                        log.Printf("Warning: Failed to load env file from %s: %v", *envPath, err)
+                }</span> else<span class="cov0" title="0"> {
+                        log.Printf("Loaded env from %s", *envPath)
+                }</span>
+        }
+
+        <span class="cov0" title="0">cfg := config.Load()
+
+        db, err := database.Initialize(cfg.DatabaseURL)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Fatal("Failed to init DB:", err)
+        }</span>
+        <span class="cov0" title="0">defer db.Close()
+    // Migrations are managed via golang-migrate and the Makefile targets
+
+        r := gin.Default()
+
+        // CORS minimal setup (adjust origin in production)
+        r.Use(func(c *gin.Context) </span><span class="cov0" title="0">{
+                c.Writer.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+                c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+                c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+                c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, PUT, DELETE, OPTIONS")
+                if c.Request.Method == "OPTIONS" </span><span class="cov0" title="0">{
+                        c.AbortWithStatus(204)
+                        return
+                }</span>
+                <span class="cov0" title="0">c.Next()</span>
+        })
+
+        // Wiring usecases
+        <span class="cov0" title="0">userRepo := user.NewRepository(db)
+        userUC := user.NewUsecase(userRepo, cfg)
+        postRepo := post.NewRepository(db)
+        postUC := post.NewUsecase(db, postRepo)
+        commentRepo := comment.NewRepository(db)
+        commentUC := comment.NewUsecase(db, commentRepo)
+
+        api := r.Group("/api/v1")
+        apihttp.RegisterAuthRoutes(api, userUC, cfg)
+
+        protected := api.Group("")
+        protected.Use(middleware.AuthMiddleware(cfg))
+        apihttp.RegisterPostRoutes(protected, postUC)
+        apihttp.RegisterCommentRoutes(protected, commentUC)
+
+        port := cfg.Port
+        if port == "" </span><span class="cov0" title="0">{
+                port = "8080"
+        }</span>
+        <span class="cov0" title="0">log.Printf("Server starting on port %s", port)
+        if err := r.Run(":" + port); err != nil </span><span class="cov0" title="0">{
+                log.Fatal("Failed to start server:", err)
+        }</span>
+}
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package config
+
+import (
+        "log"
+        "os"
+
+        "github.com/joho/godotenv"
+)
+
+type Config struct {
+        DatabaseURL string
+        JWTSecret   string
+        Port        string
+}
+
+func Load() Config <span class="cov0" title="0">{
+        // Only auto-load if DATABASE_URL is not already set (might be set via --env-path flag)
+        if os.Getenv("DATABASE_URL") == "" </span><span class="cov0" title="0">{
+                // Load from config/.env first, then fallback to .env in root
+                if err := godotenv.Load("config/.env"); err != nil </span><span class="cov0" title="0">{
+                        log.Println("config/.env not found, trying .env in root")
+                        _ = godotenv.Load(".env")
+                }</span> else<span class="cov0" title="0"> {
+                        log.Println("Loaded config from config/.env")
+                }</span>
+        }
+
+        <span class="cov0" title="0">cfg := Config{
+                DatabaseURL: getenv("DATABASE_URL", ""),
+                JWTSecret:   getenv("JWT_SECRET", "your-secret-key-change-in-production"),
+                Port:        getenv("PORT", "3011"),
+        }
+
+        if cfg.DatabaseURL == "" </span><span class="cov0" title="0">{
+                log.Fatal("DATABASE_URL is required in config/.env file")
+        }</span>
+        // PORT defaults to 3011 if not set
+
+        <span class="cov0" title="0">return cfg</span>
+}
+
+func getenv(key, def string) string <span class="cov0" title="0">{
+        val := os.Getenv(key)
+        if val == "" </span><span class="cov0" title="0">{
+                return def
+        }</span>
+        <span class="cov0" title="0">return val</span>
+}
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package comment
+
+import "database/sql"
+
+type Repository struct{ db *sql.DB }
+
+func NewRepository(db *sql.DB) *Repository <span class="cov8" title="1">{ return &amp;Repository{db: db} }</span>
+
+func (r *Repository) PostExists(id int) (bool, error) <span class="cov8" title="1">{
+        var exists bool
+        err := r.db.QueryRow("SELECT EXISTS(SELECT 1 FROM posts WHERE id=$1 AND deleted_at IS NULL)", id).Scan(&amp;exists)
+        return exists, err
+}</span>
+
+func (r *Repository) ListByPost(postID int) (*sql.Rows, error) <span class="cov0" title="0">{
+        const q = `SELECT c.id, c.post_id, c.user_id, c.content, c.created_at, c.updated_at, u.username as author
+               FROM comments c JOIN users u ON c.user_id = u.id
+               WHERE c.post_id = $1 AND c.deleted_at IS NULL
+               ORDER BY c.created_at ASC`
+        return r.db.Query(q, postID)
+}</span>
+
+func (r *Repository) GetByID(id int) (*sql.Row, error) <span class="cov8" title="1">{
+        const q = `SELECT c.id, c.post_id, c.user_id, c.content, c.created_at, c.updated_at, u.username as author
+               FROM comments c JOIN users u ON c.user_id = u.id WHERE c.id=$1 AND c.deleted_at IS NULL`
+        return r.db.QueryRow(q, id), nil
+}</span>
+
+func (r *Repository) GetOwnerID(id int) (int, error) <span class="cov8" title="1">{
+        var uid int
+        err := r.db.QueryRow("SELECT user_id FROM comments WHERE id=$1 AND deleted_at IS NULL", id).Scan(&amp;uid)
+        return uid, err
+}</span>
+
+func (r *Repository) CreateTx(tx *sql.Tx, postID, userID int, content string) (int, error) <span class="cov0" title="0">{
+        var id int
+        err := tx.QueryRow("INSERT INTO comments (post_id, user_id, content) VALUES ($1,$2,$3) RETURNING id", postID, userID, content).Scan(&amp;id)
+        return id, err
+}</span>
+
+// UpdateTx performs a soft update by invalidating the current row and inserting a new one.
+func (r *Repository) UpdateTx(tx *sql.Tx, id int, content *string) (int, error) <span class="cov8" title="1">{
+        const q = `WITH old AS (
+                    SELECT id, post_id, user_id, content FROM comments WHERE id = $1 AND deleted_at IS NULL FOR UPDATE
+                ), del AS (
+                    UPDATE comments SET deleted_at = CURRENT_TIMESTAMP WHERE id IN (SELECT id FROM old)
+                    RETURNING 1
+                )
+                INSERT INTO comments (post_id, user_id, content)
+                SELECT post_id, user_id, COALESCE($2, content) FROM old
+                RETURNING id`
+        var newID int
+        if err := tx.QueryRow(q, id, content).Scan(&amp;newID); err != nil </span><span class="cov0" title="0">{
+                return 0, err
+        }</span>
+        <span class="cov8" title="1">return newID, nil</span>
+}
+
+func (r *Repository) DeleteTx(tx *sql.Tx, id int) error <span class="cov8" title="1">{
+        _, err := tx.Exec("UPDATE comments SET deleted_at=CURRENT_TIMESTAMP WHERE id=$1 AND deleted_at IS NULL", id)
+        return err
+}</span>
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">package comment
+
+import "database/sql"
+
+type Usecase struct {
+    repo *Repository
+    db   *sql.DB
+}
+
+func NewUsecase(db *sql.DB, repo *Repository) *Usecase <span class="cov8" title="1">{ return &amp;Usecase{db: db, repo: repo} }</span>
+
+func (u *Usecase) ListByPost(postID int) ([]Comment, error) <span class="cov0" title="0">{
+    rows, err := u.repo.ListByPost(postID)
+    if err != nil </span><span class="cov0" title="0">{ return nil, err }</span>
+    <span class="cov0" title="0">defer rows.Close()
+    var out []Comment
+    for rows.Next() </span><span class="cov0" title="0">{
+        var c Comment
+        if err := rows.Scan(&amp;c.ID, &amp;c.PostID, &amp;c.UserID, &amp;c.Content, &amp;c.CreatedAt, &amp;c.UpdatedAt, &amp;c.Author); err != nil </span><span class="cov0" title="0">{ return nil, err }</span>
+        <span class="cov0" title="0">out = append(out, c)</span>
+    }
+    <span class="cov0" title="0">return out, nil</span>
+}
+
+func (u *Usecase) Get(id int) (Comment, error) <span class="cov8" title="1">{
+    row, _ := u.repo.GetByID(id)
+    var c Comment
+    if err := row.Scan(&amp;c.ID, &amp;c.PostID, &amp;c.UserID, &amp;c.Content, &amp;c.CreatedAt, &amp;c.UpdatedAt, &amp;c.Author); err != nil </span><span class="cov8" title="1">{ return Comment{}, err }</span>
+    <span class="cov0" title="0">return c, nil</span>
+}
+
+func (u *Usecase) Create(postID, userID int, content string) (Comment, error) <span class="cov8" title="1">{
+    exists, err := u.repo.PostExists(postID)
+    if err != nil </span><span class="cov8" title="1">{ return Comment{}, err }</span>
+    <span class="cov8" title="1">if !exists </span><span class="cov8" title="1">{ return Comment{}, ErrNotFound }</span>
+    <span class="cov8" title="1">tx, err := u.db.Begin()
+    if err != nil </span><span class="cov8" title="1">{ return Comment{}, err }</span>
+    <span class="cov0" title="0">defer tx.Rollback()
+    id, err := u.repo.CreateTx(tx, postID, userID, content)
+    if err != nil </span><span class="cov0" title="0">{ return Comment{}, err }</span>
+    <span class="cov0" title="0">if err := tx.Commit(); err != nil </span><span class="cov0" title="0">{ return Comment{}, err }</span>
+    <span class="cov0" title="0">return u.Get(id)</span>
+}
+
+func (u *Usecase) Update(userID, id int, content *string) (Comment, error) <span class="cov8" title="1">{
+    ownerID, err := u.repo.GetOwnerID(id)
+    if err != nil </span><span class="cov8" title="1">{ return Comment{}, err }</span>
+    <span class="cov8" title="1">if ownerID != userID </span><span class="cov8" title="1">{ return Comment{}, ErrForbidden }</span>
+    <span class="cov0" title="0">tx, err := u.db.Begin()
+    if err != nil </span><span class="cov0" title="0">{ return Comment{}, err }</span>
+    <span class="cov0" title="0">defer tx.Rollback()
+    newID, err := u.repo.UpdateTx(tx, id, content)
+    if err != nil </span><span class="cov0" title="0">{ return Comment{}, err }</span>
+    <span class="cov0" title="0">if err := tx.Commit(); err != nil </span><span class="cov0" title="0">{ return Comment{}, err }</span>
+    <span class="cov0" title="0">return u.Get(newID)</span>
+}
+
+func (u *Usecase) Delete(userID, id int) error <span class="cov8" title="1">{
+    ownerID, err := u.repo.GetOwnerID(id)
+    if err != nil </span><span class="cov8" title="1">{ return err }</span>
+    <span class="cov8" title="1">if ownerID != userID </span><span class="cov8" title="1">{ return ErrForbidden }</span>
+    <span class="cov0" title="0">tx, err := u.db.Begin()
+    if err != nil </span><span class="cov0" title="0">{ return err }</span>
+    <span class="cov0" title="0">defer tx.Rollback()
+    if err := u.repo.DeleteTx(tx, id); err != nil </span><span class="cov0" title="0">{ return err }</span>
+    <span class="cov0" title="0">return tx.Commit()</span>
+}
+
+var (
+    ErrForbidden = errString("forbidden")
+    ErrNotFound  = errString("not_found")
+)
+
+type errString string
+func (e errString) Error() string <span class="cov0" title="0">{ return string(e) }</span>
+
+
+</pre>
+		
+		<pre class="file" id="file7" style="display: none">package database
+
+import (
+    "database/sql"
+    "log"
+
+    _ "github.com/lib/pq"
+)
+
+func Initialize(dbURL string) (*sql.DB, error) <span class="cov0" title="0">{
+    db, err := sql.Open("postgres", dbURL)
+    if err != nil </span><span class="cov0" title="0">{
+        return nil, err
+    }</span>
+    <span class="cov0" title="0">if err := db.Ping(); err != nil </span><span class="cov0" title="0">{
+        return nil, err
+    }</span>
+    <span class="cov0" title="0">log.Println("Database connection established")
+    return db, nil</span>
+}
+
+func Migrate(db *sql.DB) error <span class="cov0" title="0">{
+    queries := []string{
+        `CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            username VARCHAR(50) UNIQUE NOT NULL,
+            email VARCHAR(100) UNIQUE NOT NULL,
+            password_hash VARCHAR(255) NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`,
+        `CREATE TABLE IF NOT EXISTS posts (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            title VARCHAR(255) NOT NULL,
+            content TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`,
+        `CREATE TABLE IF NOT EXISTS comments (
+            id SERIAL PRIMARY KEY,
+            post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            content TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`,
+        `CREATE INDEX IF NOT EXISTS idx_posts_user_id ON posts(user_id)`,
+        `CREATE INDEX IF NOT EXISTS idx_comments_post_id ON comments(post_id)`,
+        `CREATE INDEX IF NOT EXISTS idx_comments_user_id ON comments(user_id)`,
+    }
+
+    for _, q := range queries </span><span class="cov0" title="0">{
+        if _, err := db.Exec(q); err != nil </span><span class="cov0" title="0">{
+            return err
+        }</span>
+    }
+    <span class="cov0" title="0">log.Println("Database migrations completed")
+    return nil</span>
+}
+
+
+</pre>
+		
+		<pre class="file" id="file8" style="display: none">package handlers
+
+import (
+    "majoo-case1-rest-api/config"
+    httpx "majoo-case1-rest-api/internal/http"
+    "majoo-case1-rest-api/internal/user"
+    "net/http"
+
+    "github.com/gin-gonic/gin"
+)
+
+type AuthHandler struct {
+    usecase *user.Usecase
+    cfg     config.Config
+}
+
+func NewAuthHandler(u *user.Usecase, cfg config.Config) *AuthHandler <span class="cov0" title="0">{ return &amp;AuthHandler{usecase: u, cfg: cfg} }</span>
+
+func (h *AuthHandler) Register(c *gin.Context) <span class="cov0" title="0">{
+    var req user.RegisterRequest
+    if err := c.ShouldBindJSON(&amp;req); err != nil </span><span class="cov0" title="0">{
+        httpx.RespondWithError(c, http.StatusBadRequest, err.Error())
+        return
+    }</span>
+    <span class="cov0" title="0">u, token, err := h.usecase.Register(req.Username, req.Email, req.Password)
+    if err != nil </span><span class="cov0" title="0">{
+        switch err </span>{
+        case user.ErrConflict:<span class="cov0" title="0">
+            httpx.RespondWithError(c, http.StatusConflict, "User exists")</span>
+        default:<span class="cov0" title="0">
+            httpx.RespondWithError(c, http.StatusInternalServerError, "Failed to register")</span>
+        }
+        <span class="cov0" title="0">return</span>
+    }
+    <span class="cov0" title="0">c.SetSameSite(http.SameSiteLaxMode)
+    isSecure := c.Request.TLS != nil
+    c.SetCookie("token", token, 24*60*60, "/", "", isSecure, true)
+    httpx.RespondWithSuccess(c, http.StatusCreated, user.LoginResponse{Token: token, User: u})</span>
+}
+
+func (h *AuthHandler) Login(c *gin.Context) <span class="cov0" title="0">{
+    var req user.LoginRequest
+    if err := c.ShouldBindJSON(&amp;req); err != nil </span><span class="cov0" title="0">{
+        httpx.RespondWithError(c, http.StatusBadRequest, err.Error())
+        return
+    }</span>
+    <span class="cov0" title="0">u, token, err := h.usecase.Login(req.Email, req.Password)
+    if err != nil </span><span class="cov0" title="0">{
+        switch err </span>{
+        case user.ErrUnauthorized:<span class="cov0" title="0">
+            httpx.RespondWithError(c, http.StatusUnauthorized, "Invalid credentials")</span>
+        default:<span class="cov0" title="0">
+            httpx.RespondWithError(c, http.StatusInternalServerError, "Login failed")</span>
+        }
+        <span class="cov0" title="0">return</span>
+    }
+    <span class="cov0" title="0">c.SetSameSite(http.SameSiteLaxMode)
+    isSecure := c.Request.TLS != nil
+    c.SetCookie("token", token, 24*60*60, "/", "", isSecure, true)
+    httpx.RespondWithSuccess(c, http.StatusOK, user.LoginResponse{Token: token, User: u})</span>
+}
+
+
+</pre>
+		
+		<pre class="file" id="file9" style="display: none">package middleware
+
+import (
+        "majoo-case1-rest-api/config"
+        httpx "majoo-case1-rest-api/internal/http"
+        "majoo-case1-rest-api/internal/security"
+        "net/http"
+
+        "github.com/gin-gonic/gin"
+)
+
+// Cookie-only auth using JWT
+func AuthMiddleware(cfg config.Config) gin.HandlerFunc <span class="cov0" title="0">{
+        secret := []byte(cfg.JWTSecret)
+        return func(c *gin.Context) </span><span class="cov0" title="0">{
+                token, err := c.Cookie("token")
+                if err != nil || token == "" </span><span class="cov0" title="0">{
+                        httpx.RespondWithError(c, http.StatusUnauthorized, "Authentication cookie required")
+                        c.Abort()
+                        return
+                }</span>
+                <span class="cov0" title="0">claims, err := security.ValidateToken(secret, token)
+                if err != nil </span><span class="cov0" title="0">{
+                        httpx.RespondWithError(c, http.StatusUnauthorized, "Invalid or expired token")
+                        c.Abort()
+                        return
+                }</span>
+                <span class="cov0" title="0">c.Set("userID", claims.UserID)
+                c.Set("username", claims.Username)
+                c.Set("email", claims.Email)
+                c.Next()</span>
+        }
+}
+</pre>
+		
+		<pre class="file" id="file10" style="display: none">package httpx
+
+import (
+    "net/http"
+
+    "github.com/gin-gonic/gin"
+)
+
+type ErrorResponse struct {
+    Error   string `json:"error"`
+    Message string `json:"message,omitempty"`
+}
+
+func RespondWithError(c *gin.Context, statusCode int, message string) <span class="cov0" title="0">{
+    c.JSON(statusCode, ErrorResponse{Error: http.StatusText(statusCode), Message: message})
+}</span>
+
+func RespondWithSuccess(c *gin.Context, statusCode int, data interface{}) <span class="cov0" title="0">{
+    c.JSON(statusCode, data)
+}</span>
+
+func RespondWithMessage(c *gin.Context, statusCode int, message string) <span class="cov0" title="0">{
+    c.JSON(statusCode, gin.H{"message": message})
+}</span>
+
+
+</pre>
+		
+		<pre class="file" id="file11" style="display: none">package post
+
+import "database/sql"
+
+type Repository struct{ db *sql.DB }
+
+func NewRepository(db *sql.DB) *Repository <span class="cov8" title="1">{ return &amp;Repository{db: db} }</span>
+
+func (r *Repository) List(limit, offset int) (*sql.Rows, error) <span class="cov0" title="0">{
+    const q = `SELECT p.id, p.user_id, p.title, p.content, p.created_at, p.updated_at, u.username as author
+               FROM posts p JOIN users u ON p.user_id = u.id
+               WHERE p.deleted_at IS NULL
+               ORDER BY p.created_at DESC LIMIT $1 OFFSET $2`
+    return r.db.Query(q, limit, offset)
+}</span>
+
+func (r *Repository) GetByID(id int) (*sql.Row, error) <span class="cov8" title="1">{
+    const q = `SELECT p.id, p.user_id, p.title, p.content, p.created_at, p.updated_at, u.username as author
+               FROM posts p JOIN users u ON p.user_id = u.id WHERE p.id = $1 AND p.deleted_at IS NULL`
+    return r.db.QueryRow(q, id), nil
+}</span>
+
+func (r *Repository) GetOwnerID(id int) (int, error) <span class="cov8" title="1">{
+    var userID int
+    err := r.db.QueryRow("SELECT user_id FROM posts WHERE id = $1 AND deleted_at IS NULL", id).Scan(&amp;userID)
+    return userID, err
+}</span>
+
+func (r *Repository) CreateTx(tx *sql.Tx, userID int, title, content string) (int, error) <span class="cov0" title="0">{
+    var id int
+    err := tx.QueryRow("INSERT INTO posts (user_id, title, content) VALUES ($1,$2,$3) RETURNING id", userID, title, content).Scan(&amp;id)
+    return id, err
+}</span>
+
+// UpdateTx performs a soft update: invalidate current row and create a new one.
+func (r *Repository) UpdateTx(tx *sql.Tx, id int, title *string, content *string) (int, error) <span class="cov8" title="1">{
+    // Use a CTE to fetch old, soft-delete, and insert a new row with merged values
+    const q = `WITH old AS (
+                    SELECT id, user_id, title, content FROM posts WHERE id = $1 AND deleted_at IS NULL FOR UPDATE
+                ), del AS (
+                    UPDATE posts SET deleted_at = CURRENT_TIMESTAMP WHERE id IN (SELECT id FROM old)
+                    RETURNING 1
+                )
+                INSERT INTO posts (user_id, title, content)
+                SELECT user_id, COALESCE($2, title), COALESCE($3, content) FROM old
+                RETURNING id`
+    var newID int
+    if err := tx.QueryRow(q, id, title, content).Scan(&amp;newID); err != nil </span><span class="cov0" title="0">{
+        return 0, err
+    }</span>
+    <span class="cov8" title="1">return newID, nil</span>
+}
+
+func (r *Repository) DeleteTx(tx *sql.Tx, id int) error <span class="cov8" title="1">{
+    _, err := tx.Exec("UPDATE posts SET deleted_at=CURRENT_TIMESTAMP WHERE id=$1 AND deleted_at IS NULL", id)
+    return err
+}</span>
+
+
+</pre>
+		
+		<pre class="file" id="file12" style="display: none">package post
+
+import "database/sql"
+
+type Usecase struct {
+        repo *Repository
+        db   *sql.DB
+}
+
+func NewUsecase(db *sql.DB, repo *Repository) *Usecase <span class="cov8" title="1">{ return &amp;Usecase{db: db, repo: repo} }</span>
+
+func (u *Usecase) List(page, limit int) ([]Post, error) <span class="cov0" title="0">{
+        if page &lt; 1 </span><span class="cov0" title="0">{
+                page = 1
+        }</span>
+        <span class="cov0" title="0">if limit &lt; 1 </span><span class="cov0" title="0">{
+                limit = 10
+        }</span>
+        <span class="cov0" title="0">offset := (page - 1) * limit
+        rows, err := u.repo.List(limit, offset)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">defer rows.Close()
+        var out []Post
+        for rows.Next() </span><span class="cov0" title="0">{
+                var p Post
+                if err := rows.Scan(&amp;p.ID, &amp;p.UserID, &amp;p.Title, &amp;p.Content, &amp;p.CreatedAt, &amp;p.UpdatedAt, &amp;p.Author); err != nil </span><span class="cov0" title="0">{
+                        return nil, err
+                }</span>
+                <span class="cov0" title="0">out = append(out, p)</span>
+        }
+        <span class="cov0" title="0">return out, nil</span>
+}
+
+func (u *Usecase) Get(id int) (Post, error) <span class="cov8" title="1">{
+        row, _ := u.repo.GetByID(id)
+        var p Post
+        if err := row.Scan(&amp;p.ID, &amp;p.UserID, &amp;p.Title, &amp;p.Content, &amp;p.CreatedAt, &amp;p.UpdatedAt, &amp;p.Author); err != nil </span><span class="cov8" title="1">{
+                return Post{}, err
+        }</span>
+        <span class="cov0" title="0">return p, nil</span>
+}
+
+func (u *Usecase) Create(userID int, req CreatePostRequest) (Post, error) <span class="cov8" title="1">{
+        tx, err := u.db.Begin()
+        if err != nil </span><span class="cov8" title="1">{
+                return Post{}, err
+        }</span>
+        <span class="cov0" title="0">defer tx.Rollback()
+        id, err := u.repo.CreateTx(tx, userID, req.Title, req.Content)
+        if err != nil </span><span class="cov0" title="0">{
+                return Post{}, err
+        }</span>
+        <span class="cov0" title="0">if err := tx.Commit(); err != nil </span><span class="cov0" title="0">{
+                return Post{}, err
+        }</span>
+        <span class="cov0" title="0">return u.Get(id)</span>
+}
+
+func (u *Usecase) Update(userID, id int, req UpdatePostRequest) (Post, error) <span class="cov8" title="1">{
+        ownerID, err := u.repo.GetOwnerID(id)
+        if err != nil </span><span class="cov8" title="1">{
+                return Post{}, err
+        }</span>
+        <span class="cov8" title="1">if ownerID != userID </span><span class="cov8" title="1">{
+                return Post{}, ErrForbidden
+        }</span>
+        <span class="cov0" title="0">tx, err := u.db.Begin()
+        if err != nil </span><span class="cov0" title="0">{
+                return Post{}, err
+        }</span>
+        <span class="cov0" title="0">defer tx.Rollback()
+        newID, err := u.repo.UpdateTx(tx, id, req.Title, req.Content)
+        if err != nil </span><span class="cov0" title="0">{
+                return Post{}, err
+        }</span>
+        <span class="cov0" title="0">if err := tx.Commit(); err != nil </span><span class="cov0" title="0">{
+                return Post{}, err
+        }</span>
+        <span class="cov0" title="0">return u.Get(newID)</span>
+}
+
+func (u *Usecase) Delete(userID, id int) error <span class="cov8" title="1">{
+        ownerID, err := u.repo.GetOwnerID(id)
+        if err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+        <span class="cov8" title="1">if ownerID != userID </span><span class="cov8" title="1">{
+                return ErrForbidden
+        }</span>
+        <span class="cov0" title="0">tx, err := u.db.Begin()
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov0" title="0">defer tx.Rollback()
+        if err := u.repo.DeleteTx(tx, id); err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov0" title="0">return tx.Commit()</span>
+}
+
+var (
+        ErrForbidden = errString("forbidden")
+)
+
+type errString string
+
+func (e errString) Error() string <span class="cov0" title="0">{ return string(e) }</span>
+</pre>
+		
+		<pre class="file" id="file13" style="display: none">package security
+
+import (
+    "errors"
+    "time"
+
+    "github.com/golang-jwt/jwt/v5"
+)
+
+type Claims struct {
+    UserID   int    `json:"user_id"`
+    Username string `json:"username"`
+    Email    string `json:"email"`
+    jwt.RegisteredClaims
+}
+
+func GenerateToken(secret []byte, userID int, username, email string, ttl time.Duration) (string, error) <span class="cov0" title="0">{
+    claims := &amp;Claims{
+        UserID:   userID,
+        Username: username,
+        Email:    email,
+        RegisteredClaims: jwt.RegisteredClaims{
+            ExpiresAt: jwt.NewNumericDate(time.Now().Add(ttl)),
+            IssuedAt:  jwt.NewNumericDate(time.Now()),
+        },
+    }
+    token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+    return token.SignedString(secret)
+}</span>
+
+func ValidateToken(secret []byte, tokenString string) (*Claims, error) <span class="cov0" title="0">{
+    claims := &amp;Claims{}
+    token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) </span><span class="cov0" title="0">{
+        return secret, nil
+    }</span>)
+    <span class="cov0" title="0">if err != nil </span><span class="cov0" title="0">{
+        return nil, err
+    }</span>
+    <span class="cov0" title="0">if !token.Valid </span><span class="cov0" title="0">{
+        return nil, errors.New("invalid token")
+    }</span>
+    <span class="cov0" title="0">return claims, nil</span>
+}
+
+
+</pre>
+		
+		<pre class="file" id="file14" style="display: none">package security
+
+import "golang.org/x/crypto/bcrypt"
+
+func HashPassword(password string) (string, error) <span class="cov0" title="0">{
+    bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+    return string(bytes), err
+}</span>
+
+func CheckPasswordHash(password, hash string) bool <span class="cov0" title="0">{
+    return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) == nil
+}</span>
+
+
+</pre>
+		
+		<pre class="file" id="file15" style="display: none">package testutil
+
+import (
+    "database/sql"
+
+    sqlmock "github.com/DATA-DOG/go-sqlmock"
+)
+
+func NewSQLMock() (*sql.DB, sqlmock.Sqlmock, error) <span class="cov0" title="0">{
+    db, mock, err := sqlmock.New()
+    if err != nil </span><span class="cov0" title="0">{
+        return nil, nil, err
+    }</span>
+    <span class="cov0" title="0">return db, mock, nil</span>
+}
+
+
+</pre>
+		
+		<pre class="file" id="file16" style="display: none">package user
+
+import "database/sql"
+
+type Repository struct{ db *sql.DB }
+
+func NewRepository(db *sql.DB) *Repository <span class="cov8" title="1">{ return &amp;Repository{db: db} }</span>
+
+func (r *Repository) ExistsByEmailOrUsername(email, username string) (bool, error) <span class="cov8" title="1">{
+    var exists bool
+    err := r.db.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE email = $1 OR username = $2)", email, username).Scan(&amp;exists)
+    return exists, err
+}</span>
+
+func (r *Repository) Create(username, email, passwordHash string) (int, error) <span class="cov8" title="1">{
+    var id int
+    err := r.db.QueryRow("INSERT INTO users (username, email, password_hash) VALUES ($1,$2,$3) RETURNING id", username, email, passwordHash).Scan(&amp;id)
+    return id, err
+}</span>
+
+func (r *Repository) GetByEmail(email string) (User, error) <span class="cov8" title="1">{
+    var u User
+    err := r.db.QueryRow("SELECT id, username, email, password_hash, created_at, updated_at FROM users WHERE email = $1", email).Scan(&amp;u.ID, &amp;u.Username, &amp;u.Email, &amp;u.PasswordHash, &amp;u.CreatedAt, &amp;u.UpdatedAt)
+    return u, err
+}</span>
+
+
+</pre>
+		
+		<pre class="file" id="file17" style="display: none">package user
+
+import (
+    "time"
+
+    "majoo-case1-rest-api/config"
+    "majoo-case1-rest-api/internal/security"
+)
+
+type Usecase struct {
+    repo   *Repository
+    secret []byte
+}
+
+func NewUsecase(repo *Repository, cfg config.Config) *Usecase <span class="cov8" title="1">{
+    return &amp;Usecase{repo: repo, secret: []byte(cfg.JWTSecret)}
+}</span>
+
+func (u *Usecase) Register(username, email, password string) (User, string, error) <span class="cov8" title="1">{
+    exists, err := u.repo.ExistsByEmailOrUsername(email, username)
+    if err != nil </span><span class="cov8" title="1">{
+        return User{}, "", err
+    }</span>
+    <span class="cov8" title="1">if exists </span><span class="cov8" title="1">{
+        return User{}, "", ErrConflict
+    }</span>
+    <span class="cov8" title="1">hash, err := security.HashPassword(password)
+    if err != nil </span><span class="cov0" title="0">{
+        return User{}, "", err
+    }</span>
+    <span class="cov8" title="1">id, err := u.repo.Create(username, email, hash)
+    if err != nil </span><span class="cov0" title="0">{
+        return User{}, "", err
+    }</span>
+    <span class="cov8" title="1">token, err := security.GenerateToken(u.secret, id, username, email, 24*time.Hour)
+    if err != nil </span><span class="cov0" title="0">{
+        return User{}, "", err
+    }</span>
+    <span class="cov8" title="1">return User{ID: id, Username: username, Email: email}, token, nil</span>
+}
+
+func (u *Usecase) Login(email, password string) (User, string, error) <span class="cov8" title="1">{
+    user, err := u.repo.GetByEmail(email)
+    if err != nil </span><span class="cov8" title="1">{
+        return User{}, "", err
+    }</span>
+    <span class="cov8" title="1">if !security.CheckPasswordHash(password, user.PasswordHash) </span><span class="cov8" title="1">{
+        return User{}, "", ErrUnauthorized
+    }</span>
+    <span class="cov0" title="0">token, err := security.GenerateToken(u.secret, user.ID, user.Username, user.Email, 24*time.Hour)
+    if err != nil </span><span class="cov0" title="0">{
+        return User{}, "", err
+    }</span>
+    <span class="cov0" title="0">return user, token, nil</span>
+}
+
+var (
+    ErrUnauthorized = fmtErr("unauthorized")
+    ErrConflict     = fmtErr("conflict")
+)
+
+type fmtErr string
+
+func (e fmtErr) Error() string <span class="cov0" title="0">{ return string(e) }</span>
+
+
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>
