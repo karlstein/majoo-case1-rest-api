@@ -29,22 +29,26 @@ A RESTful API for a simple blog system built with Go, featuring user authenticat
 ## Installation
 
 1. Clone the repository:
+
 ```bash
 git clone <repository-url>
 cd majoo-case1-rest-api
 ```
 
 2. Install dependencies:
+
 ```bash
 go mod download
 ```
 
 3. Set up environment variables:
+
 ```bash
 cp .env.example .env
 ```
 
 Edit `.env` file with your database credentials:
+
 ```
 DATABASE_URL=postgres://username:password@localhost/blogdb?sslmode=disable
 JWT_SECRET=your-secret-key-change-in-production
@@ -52,11 +56,13 @@ PORT=8080
 ```
 
 4. Create PostgreSQL database:
+
 ```sql
 CREATE DATABASE blogdb;
 ```
 
 5. Run the application:
+
 ```bash
 go run main.go
 ```
@@ -66,22 +72,21 @@ The server will start on `http://localhost:8080` (or the port specified in `.env
 ## API Documentation
 
 ### Base URL
+
 ```
 http://localhost:8080/api/v1
 ```
 
 ### Authentication
 
-All protected endpoints require a JWT token in the Authorization header:
-```
-Authorization: Bearer <token>
-```
+The API issues a JWT and stores it in an HTTP-only cookie named `token`. Registering or logging in returns the user payload and sets the cookie for subsequent requests. Clients should allow credentials to be sent with each request (browsers do this automatically; API clients need to persist and resend the cookie). For frontend calls, ensure `fetch`/`axios` requests use `credentials: 'include'` or `withCredentials: true`.
 
 ### Endpoints
 
 #### Authentication
 
 ##### Register User
+
 ```http
 POST /api/v1/register
 Content-Type: application/json
@@ -94,6 +99,7 @@ Content-Type: application/json
 ```
 
 **Response (201 Created):**
+
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -107,7 +113,10 @@ Content-Type: application/json
 }
 ```
 
+> The server also sets an HTTP-only `token` cookie containing the JWT.
+
 ##### Login
+
 ```http
 POST /api/v1/login
 Content-Type: application/json
@@ -119,6 +128,7 @@ Content-Type: application/json
 ```
 
 **Response (200 OK):**
+
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -132,15 +142,19 @@ Content-Type: application/json
 }
 ```
 
+> The server also refreshes the HTTP-only `token` cookie with the new JWT.
+
 #### Posts
 
 ##### Get All Posts
+
 ```http
 GET /api/v1/posts?page=1&limit=10
-Authorization: Bearer <token>
+(requires auth cookie)
 ```
 
 **Response (200 OK):**
+
 ```json
 {
   "posts": [
@@ -160,12 +174,14 @@ Authorization: Bearer <token>
 ```
 
 ##### Get Post by ID
+
 ```http
 GET /api/v1/posts/:id
-Authorization: Bearer <token>
+(requires auth cookie)
 ```
 
 **Response (200 OK):**
+
 ```json
 {
   "id": 1,
@@ -179,10 +195,11 @@ Authorization: Bearer <token>
 ```
 
 ##### Create Post
+
 ```http
 POST /api/v1/posts
-Authorization: Bearer <token>
 Content-Type: application/json
+(requires auth cookie)
 
 {
   "title": "My New Post",
@@ -191,6 +208,7 @@ Content-Type: application/json
 ```
 
 **Response (201 Created):**
+
 ```json
 {
   "id": 1,
@@ -204,10 +222,11 @@ Content-Type: application/json
 ```
 
 ##### Update Post
+
 ```http
 PUT /api/v1/posts/:id
-Authorization: Bearer <token>
 Content-Type: application/json
+(requires auth cookie)
 
 {
   "title": "Updated Title",
@@ -216,6 +235,7 @@ Content-Type: application/json
 ```
 
 **Response (200 OK):**
+
 ```json
 {
   "id": 1,
@@ -229,12 +249,14 @@ Content-Type: application/json
 ```
 
 ##### Delete Post
+
 ```http
 DELETE /api/v1/posts/:id
-Authorization: Bearer <token>
+(requires auth cookie)
 ```
 
 **Response (200 OK):**
+
 ```json
 {
   "message": "Post deleted successfully"
@@ -244,12 +266,14 @@ Authorization: Bearer <token>
 #### Comments
 
 ##### Get Comments by Post
+
 ```http
 GET /api/v1/posts/:postId/comments
-Authorization: Bearer <token>
+(requires auth cookie)
 ```
 
 **Response (200 OK):**
+
 ```json
 {
   "post_id": 1,
@@ -268,12 +292,14 @@ Authorization: Bearer <token>
 ```
 
 ##### Get Comment by ID
+
 ```http
 GET /api/v1/comments/:id
-Authorization: Bearer <token>
+(requires auth cookie)
 ```
 
 **Response (200 OK):**
+
 ```json
 {
   "id": 1,
@@ -287,10 +313,11 @@ Authorization: Bearer <token>
 ```
 
 ##### Create Comment
+
 ```http
 POST /api/v1/posts/:postId/comments
-Authorization: Bearer <token>
 Content-Type: application/json
+(requires auth cookie)
 
 {
   "content": "This is a comment..."
@@ -298,6 +325,7 @@ Content-Type: application/json
 ```
 
 **Response (201 Created):**
+
 ```json
 {
   "id": 1,
@@ -311,10 +339,11 @@ Content-Type: application/json
 ```
 
 ##### Update Comment
+
 ```http
 PUT /api/v1/comments/:id
-Authorization: Bearer <token>
 Content-Type: application/json
+(requires auth cookie)
 
 {
   "content": "Updated comment..."
@@ -322,6 +351,7 @@ Content-Type: application/json
 ```
 
 **Response (200 OK):**
+
 ```json
 {
   "id": 1,
@@ -335,12 +365,14 @@ Content-Type: application/json
 ```
 
 ##### Delete Comment
+
 ```http
 DELETE /api/v1/comments/:id
-Authorization: Bearer <token>
+(requires auth cookie)
 ```
 
 **Response (200 OK):**
+
 ```json
 {
   "message": "Comment deleted successfully"
@@ -359,6 +391,7 @@ All errors follow a consistent format:
 ```
 
 **Common HTTP Status Codes:**
+
 - `200 OK` - Success
 - `201 Created` - Resource created successfully
 - `400 Bad Request` - Invalid input or validation error
@@ -380,6 +413,7 @@ All errors follow a consistent format:
 ## Database Schema
 
 ### Users Table
+
 - `id` (SERIAL PRIMARY KEY)
 - `username` (VARCHAR(50) UNIQUE)
 - `email` (VARCHAR(100) UNIQUE)
@@ -388,6 +422,7 @@ All errors follow a consistent format:
 - `updated_at` (TIMESTAMP)
 
 ### Posts Table
+
 - `id` (SERIAL PRIMARY KEY)
 - `user_id` (INTEGER, FOREIGN KEY)
 - `title` (VARCHAR(255))
@@ -396,6 +431,7 @@ All errors follow a consistent format:
 - `updated_at` (TIMESTAMP)
 
 ### Comments Table
+
 - `id` (SERIAL PRIMARY KEY)
 - `post_id` (INTEGER, FOREIGN KEY)
 - `user_id` (INTEGER, FOREIGN KEY)
@@ -436,8 +472,8 @@ You can use tools like Postman, cURL, or any HTTP client to test the API.
 ### Example: Register and Create a Post
 
 ```bash
-# 1. Register a user
-curl -X POST http://localhost:8080/api/v1/register \
+# 1. Register a user (stores auth cookie in cookies.txt)
+curl -c cookies.txt -X POST http://localhost:8080/api/v1/register \
   -H "Content-Type: application/json" \
   -d '{
     "username": "johndoe",
@@ -445,18 +481,17 @@ curl -X POST http://localhost:8080/api/v1/register \
     "password": "password123"
   }'
 
-# 2. Login (if needed)
-curl -X POST http://localhost:8080/api/v1/login \
+# 2. Login (optional refresh of the cookie)
+curl -c cookies.txt -b cookies.txt -X POST http://localhost:8080/api/v1/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "john@example.com",
     "password": "password123"
   }'
 
-# 3. Create a post (use token from step 1 or 2)
-curl -X POST http://localhost:8080/api/v1/posts \
+# 3. Create a post (cookie supplied via -b option)
+curl -b cookies.txt -X POST http://localhost:8080/api/v1/posts \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
   -d '{
     "title": "My First Post",
     "content": "This is my first blog post!"
@@ -481,4 +516,3 @@ go build -o blog-api main.go
 ## License
 
 This project is created for testing purposes.
-
